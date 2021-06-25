@@ -15,6 +15,16 @@ target_compile_definitions(ktmac-window-hook PRIVATE
     -DHOOK_EXPORT
 )
 
+add_executable(ktmac-process-hook WIN32
+    ${PROJECT_SOURCE_DIR}/Source/ProcessHook.cc
+    ${PROJECT_SOURCE_DIR}/Source/ProcessWatcher.cc
+    ${PROJECT_SOURCE_DIR}/Source/WmiEventSink.cc
+)
+target_link_libraries(ktmac-process-hook wbemuuid.lib)
+target_include_directories(ktmac-process-hook PUBLIC
+    ${PROJECT_SOURCE_DIR}/Public
+)
+
 add_library(ktmac
     ${PROJECT_SOURCE_DIR}/Source/KakaoStateManager.cc
 )
