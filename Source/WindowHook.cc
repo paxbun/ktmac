@@ -13,7 +13,7 @@ namespace ktmac
 
 struct HookListEntry
 {
-    HWINEVENTHOOK    hook;
+    ::HWINEVENTHOOK  hook;
     HookEventHandler handler;
     HookEventContext context;
 };
@@ -63,9 +63,9 @@ BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, LPVOID reserved)
     return TRUE;
 }
 
-HOOK_PUBLIC HWINEVENTHOOK HookStart(DWORD            processId,
-                                    HookEventHandler handler,
-                                    HookEventContext context)
+KTMAC_WINDOW_HOOK_PUBLIC HWINEVENTHOOK HookStart(DWORD            processId,
+                                                 HookEventHandler handler,
+                                                 HookEventContext context)
 {
     if (processId == NULL)
         return NULL;
@@ -88,7 +88,7 @@ HOOK_PUBLIC HWINEVENTHOOK HookStart(DWORD            processId,
     return rtn;
 }
 
-HOOK_PUBLIC void HookStop(HWINEVENTHOOK hook)
+KTMAC_WINDOW_HOOK_PUBLIC void HookStop(HWINEVENTHOOK hook)
 {
     std::lock_guard<std::mutex> guard { _hookListMtx };
 

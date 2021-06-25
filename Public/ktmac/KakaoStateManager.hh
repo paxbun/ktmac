@@ -1,8 +1,8 @@
 // Copyright (c) 2021 Chanjung Kim (paxbun). All rights reserved.
 // Licensed under the MIT License.
 
-#ifndef KAKAO_STATE_MANAGER_HH
-#define KAKAO_STATE_MANAGER_HH
+#ifndef KTMAC_KAKAO_STATE_MANAGER_HH
+#define KTMAC_KAKAO_STATE_MANAGER_HH
 
 #include <Windows.h>
 
