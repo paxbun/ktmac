@@ -52,8 +52,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR commandLine, int)
     if (!ProcessWatcher::InitializeCom())
         return 1;
 
+    if (!ProcessWatcherSocket::InitializeWinSock())
+        return 1;
+
     int rtn = Run(portNumber);
+
     ProcessWatcher::UninitializeCom();
+    ProcessWatcherSocket::UninitializeWinSock();
 
     return rtn;
 }
