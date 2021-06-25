@@ -45,3 +45,11 @@ add_executable(ktmac-test
     ${PROJECT_SOURCE_DIR}/Source/Main.cc
 )
 target_link_libraries(ktmac-test PUBLIC ktmac)
+
+add_executable(ktmac-process-hook-test
+    ${PROJECT_SOURCE_DIR}/Source/ProcessHookTest.cc
+)
+target_link_libraries(ktmac-process-hook-test ktmac-process-watcher-socket)
+target_include_directories(ktmac PUBLIC
+    ${PROJECT_SOURCE_DIR}/Public
+)
