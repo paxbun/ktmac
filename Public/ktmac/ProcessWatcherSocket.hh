@@ -4,8 +4,6 @@
 #ifndef KTMAC_SOCKET_HH
 #define KTMAC_SOCKET_HH
 
-#include <WinSock2.h>
-
 #include <cstdint>
 #include <functional>
 #include <thread>
@@ -40,7 +38,7 @@ class ProcessWatcherSocket
     static ProcessWatcherSocket MakeClientSocket(int portNumber);
 
   private:
-    SOCKET                      _socket;
+    void*                       _socket;
     SocketType                  _socketType;
     ProcessWatcherSocketHandler _handler;
     std::thread                 _recvThread;
@@ -49,7 +47,7 @@ class ProcessWatcherSocket
     ~ProcessWatcherSocket();
 
   private:
-    ProcessWatcherSocket(SOCKET                        socket,
+    ProcessWatcherSocket(void*                         socket,
                          SocketType                    socketType,
                          ProcessWatcherSocketHandler&& handler = nullptr);
 

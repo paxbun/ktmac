@@ -71,7 +71,7 @@ ProcessWatcherSocket ProcessWatcherSocket::MakeServerSocket(int portNumber,
 
     closesocket(listenSocket);
 
-    return ProcessWatcherSocket { socket, SocketType::Server, std::move(handler) };
+    return ProcessWatcherSocket { (void*)socket, SocketType::Server, std::move(handler) };
 }
 
 ProcessWatcherSocket ProcessWatcherSocket::MakeClientSocket(int portNumber)
@@ -106,10 +106,10 @@ ProcessWatcherSocket ProcessWatcherSocket::MakeClientSocket(int portNumber)
     if (socket == INVALID_SOCKET)
         throw std::runtime_error { "Failed to create a socket." };
 
-    return ProcessWatcherSocket { socket, SocketType::Client };
+    return ProcessWatcherSocket { (void*)socket, SocketType::Client };
 }
 
-ProcessWatcherSocket::ProcessWatcherSocket(SOCKET                        socket,
+ProcessWatcherSocket::ProcessWatcherSocket(void*                         socket,
                                            SocketType                    socketType,
                                            ProcessWatcherSocketHandler&& handler) :
     _socket { socket },
@@ -120,20 +120,21 @@ ProcessWatcherSocket::ProcessWatcherSocket(SOCKET                        socket,
 
 ProcessWatcherSocket::~ProcessWatcherSocket()
 {
-    if (_socket != INVALID_SOCKET)
+    SOCKET socket = (SOCKET)_socket;
+    if (socket != INVALID_SOCKET)
     {
         if (_socketType == SocketType::Server)
         {
             auto message = ProcessWatcherMessage::Quit;
-            send(_socket, (const char*)&message, 1, 0);
+            send(socket, (const char*)&message, 1, 0);
         }
 
         if (_recvThread.joinable())
             _recvThread.join();
 
-        shutdown(_socket, SD_SEND);
-        closesocket(_socket);
-        _socket     = INVALID_SOCKET;
+        shutdown(socket, SD_SEND);
+        closesocket(socket);
+        _socket     = (void*)INVALID_SOCKET;
         _socketType = SocketType::Invalid;
     }
 }
@@ -149,7 +150,7 @@ void ProcessWatcherSocket::Send(ProcessWatcherMessage message)
     if (_socketType == SocketType::Client)
     {
         if (message == ProcessWatcherMessage::Running || message == ProcessWatcherMessage::Stopped)
-            send(_socket, (const char*)&message, 1, 0);
+            send((SOCKET)_socket, (const char*)&message, 1, 0);
     }
 }
 
@@ -162,7 +163,7 @@ void ProcessWatcherSocket::HandleIncomingData()
 
     while (true)
     {
-        int result = recv(_socket, (char*)&message, 1, 0);
+        int result = recv((SOCKET)_socket, (char*)&message, 1, 0);
         if (result <= 0)
             return;
 
