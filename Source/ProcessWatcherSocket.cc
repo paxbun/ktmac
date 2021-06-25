@@ -127,13 +127,21 @@ ProcessWatcherSocket::~ProcessWatcherSocket()
             auto message = ProcessWatcherMessage::Quit;
             send(_socket, (const char*)&message, 1, 0);
         }
-        _recvThread.join();
+
+        if (_recvThread.joinable())
+            _recvThread.join();
 
         shutdown(_socket, SD_SEND);
         closesocket(_socket);
         _socket     = INVALID_SOCKET;
         _socketType = SocketType::Invalid;
     }
+}
+
+void ProcessWatcherSocket::WaitUntilQuit()
+{
+    if (_socketType == SocketType::Client)
+        _recvThread.join();
 }
 
 void ProcessWatcherSocket::Send(ProcessWatcherMessage message)

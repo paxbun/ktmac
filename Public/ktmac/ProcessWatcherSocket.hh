@@ -45,13 +45,16 @@ class ProcessWatcherSocket
     ProcessWatcherSocketHandler _handler;
     std::thread                 _recvThread;
 
+  public:
+    ~ProcessWatcherSocket();
+
   private:
     ProcessWatcherSocket(SOCKET                        socket,
                          SocketType                    socketType,
                          ProcessWatcherSocketHandler&& handler = nullptr);
-    ~ProcessWatcherSocket();
 
   public:
+    void WaitUntilQuit();
     void Send(ProcessWatcherMessage message);
 
   private:
