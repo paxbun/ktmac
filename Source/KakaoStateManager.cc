@@ -118,9 +118,10 @@ HWND FindKakaoTalkLoginWindow()
 
 }
 
-using namespace ktmac;
+namespace ktmac
+{
 
-void ktmac::HandleWindowHook(void* context, HWND window, DWORD event)
+void HandleWindowHook(void* context, HWND window, DWORD event)
 {
     auto& manager = *(KakaoStateManager*)context;
     manager.HandleWindowHook(window, event);
@@ -221,7 +222,7 @@ bool KakaoStateManager::SendMessage()
 
 void KakaoStateManager::HandleMessageLoop()
 {
-    _hookHandle = HookStart(_currentProcessId, ::HandleWindowHook, this);
+    _hookHandle = HookStart(_currentProcessId, ktmac::HandleWindowHook, this);
 
     MSG msg = {};
     while (GetMessage(&msg, NULL, 0, 0))
@@ -502,4 +503,6 @@ void KakaoStateManager::HandleWindowHook(HWND window, DWORD event)
             CallHandlers();
         }
     }
+}
+
 }

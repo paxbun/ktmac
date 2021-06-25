@@ -8,7 +8,8 @@
 #include <mutex>
 #include <unordered_map>
 
-using namespace ktmac;
+namespace ktmac
+{
 
 struct HookListEntry
 {
@@ -62,9 +63,9 @@ BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, LPVOID reserved)
     return TRUE;
 }
 
-HOOK_PUBLIC HWINEVENTHOOK ktmac::HookStart(DWORD            processId,
-                                           HookEventHandler handler,
-                                           HookEventContext context)
+HOOK_PUBLIC HWINEVENTHOOK HookStart(DWORD            processId,
+                                    HookEventHandler handler,
+                                    HookEventContext context)
 {
     if (processId == NULL)
         return NULL;
@@ -87,7 +88,7 @@ HOOK_PUBLIC HWINEVENTHOOK ktmac::HookStart(DWORD            processId,
     return rtn;
 }
 
-HOOK_PUBLIC void ktmac::HookStop(HWINEVENTHOOK hook)
+HOOK_PUBLIC void HookStop(HWINEVENTHOOK hook)
 {
     std::lock_guard<std::mutex> guard { _hookListMtx };
 
@@ -96,4 +97,6 @@ HOOK_PUBLIC void ktmac::HookStop(HWINEVENTHOOK hook)
         UnhookWinEvent(hook);
         _hookList.erase(it);
     }
+}
+
 }
