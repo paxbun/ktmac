@@ -10,6 +10,33 @@
 #include <cstdio>
 #include <stdexcept>
 
+namespace
+{
+
+HANDLE RunClient(int portNumber)
+{
+    char argument[12];
+    sprintf_s(argument, "%d", portNumber);
+
+    SHELLEXECUTEINFO shellExecuteInfo = {};
+    shellExecuteInfo.cbSize           = sizeof shellExecuteInfo;
+    shellExecuteInfo.fMask            = SEE_MASK_NOCLOSEPROCESS;
+    shellExecuteInfo.hwnd             = NULL;
+    shellExecuteInfo.lpVerb           = "runas";
+    shellExecuteInfo.lpFile           = "ktmac-process-hook.exe";
+    shellExecuteInfo.lpParameters     = argument;
+    shellExecuteInfo.lpDirectory      = NULL;
+    shellExecuteInfo.nShow            = SW_SHOW;
+    shellExecuteInfo.hInstApp         = NULL;
+
+    if (!ShellExecuteEx(&shellExecuteInfo))
+        return NULL;
+
+    return shellExecuteInfo.hProcess;
+}
+
+}
+
 namespace ktmac
 {
 
@@ -27,6 +54,10 @@ void ProcessWatcherSocket::UninitializeWinSock()
 ProcessWatcherSocket ProcessWatcherSocket::MakeServerSocket(int portNumber,
                                                             ProcessWatcherSocketHandler&& handler)
 {
+    HANDLE client = RunClient(portNumber);
+    if (client == NULL)
+        throw std::runtime_error { "Failed to launch client." };
+
     addrinfo hints    = {};
     hints.ai_family   = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
@@ -71,7 +102,7 @@ ProcessWatcherSocket ProcessWatcherSocket::MakeServerSocket(int portNumber,
 
     closesocket(listenSocket);
 
-    return ProcessWatcherSocket { (void*)socket, SocketType::Server, std::move(handler) };
+    return ProcessWatcherSocket { (void*)socket, SocketType::Server, client, std::move(handler) };
 }
 
 ProcessWatcherSocket ProcessWatcherSocket::MakeClientSocket(int portNumber)
@@ -111,7 +142,9 @@ ProcessWatcherSocket ProcessWatcherSocket::MakeClientSocket(int portNumber)
 
 ProcessWatcherSocket::ProcessWatcherSocket(void*                         socket,
                                            SocketType                    socketType,
+                                           void*                         client,
                                            ProcessWatcherSocketHandler&& handler) :
+    _client { client },
     _socket { socket },
     _socketType { socketType },
     _handler { std::move(handler) },
@@ -134,8 +167,17 @@ ProcessWatcherSocket::~ProcessWatcherSocket()
 
         shutdown(socket, SD_SEND);
         closesocket(socket);
+
+        if (_socketType == SocketType::Server)
+        {
+            WaitForSingleObject(_client, INFINITE);
+            CloseHandle(_client);
+        }
+
+        _client     = nullptr;
         _socket     = (void*)INVALID_SOCKET;
         _socketType = SocketType::Invalid;
+        _handler    = nullptr;
     }
 }
 

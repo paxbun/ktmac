@@ -10,28 +10,6 @@
 
 using namespace ktmac;
 
-HANDLE RunClient(int portNumber)
-{
-    char argument[12];
-    sprintf_s(argument, "%d", portNumber);
-
-    SHELLEXECUTEINFO shellExecuteInfo = {};
-    shellExecuteInfo.cbSize           = sizeof shellExecuteInfo;
-    shellExecuteInfo.fMask            = SEE_MASK_NOCLOSEPROCESS;
-    shellExecuteInfo.hwnd             = NULL;
-    shellExecuteInfo.lpVerb           = "runas";
-    shellExecuteInfo.lpFile           = "ktmac-process-hook.exe";
-    shellExecuteInfo.lpParameters     = argument;
-    shellExecuteInfo.lpDirectory      = NULL;
-    shellExecuteInfo.nShow            = SW_SHOW;
-    shellExecuteInfo.hInstApp         = NULL;
-
-    if (!ShellExecuteEx(&shellExecuteInfo))
-        return NULL;
-
-    return shellExecuteInfo.hProcess;
-}
-
 int main(int argc, char* argv[])
 {
     int portNumber = 23654;
@@ -46,14 +24,10 @@ int main(int argc, char* argv[])
             std::cout << "Stopped..." << std::endl;
     };
 
-    HANDLE client = RunClient(portNumber);
     {
         ProcessWatcherSocket socket { ProcessWatcherSocket::MakeServerSocket(portNumber, handler) };
         std::this_thread::sleep_for(std::chrono::seconds { 10 });
     }
-
-    WaitForSingleObject(client, INFINITE);
-    CloseHandle(client);
 
     ProcessWatcherSocket::UninitializeWinSock();
 }

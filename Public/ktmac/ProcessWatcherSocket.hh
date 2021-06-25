@@ -38,6 +38,7 @@ class ProcessWatcherSocket
     static ProcessWatcherSocket MakeClientSocket(int portNumber);
 
   private:
+    void*                       _client;
     void*                       _socket;
     SocketType                  _socketType;
     ProcessWatcherSocketHandler _handler;
@@ -49,6 +50,7 @@ class ProcessWatcherSocket
   private:
     ProcessWatcherSocket(void*                         socket,
                          SocketType                    socketType,
+                         void*                         client  = nullptr,
                          ProcessWatcherSocketHandler&& handler = nullptr);
 
   public:
