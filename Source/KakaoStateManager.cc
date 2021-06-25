@@ -142,13 +142,16 @@ KakaoStateManager::KakaoStateManager(std::initializer_list<HandlerType> handlerL
     _misc { NULL },
     _lock { NULL },
     _chatroomWindow { NULL },
-    _hookHandle { NULL }
+    _hookHandle { NULL },
+    _watcherSocket {
+        ProcessWatcherSocket::MakeServerSocket(
+            23456,
+            std::bind(&KakaoStateManager::HandleProcessHook, this, std::placeholders::_1)),
+    }
 {
     FindInitialState();
     CallHandlers();
-
-    _messageThread   = std::thread { &KakaoStateManager::HandleMessageLoop, this };
-    _messageThreadId = GetThreadId(_messageThread.native_handle());
+    RunThread();
 }
 
 KakaoStateManager::~KakaoStateManager()
@@ -170,6 +173,7 @@ bool KakaoStateManager::SetMessage(std::wstring const& message)
     if (richEdit == NULL)
         return false;
 
+    SetLastError(NOERROR);
     SendMessageW(richEdit, WM_SETTEXT, NULL, reinterpret_cast<LPARAM>(message.c_str()));
 
     return GetLastError() == NOERROR;
@@ -189,6 +193,7 @@ bool KakaoStateManager::SetMessage(std::string const& message)
     if (richEdit == NULL)
         return false;
 
+    SetLastError(NOERROR);
     SendMessageA(richEdit, WM_SETTEXT, NULL, reinterpret_cast<LPARAM>(message.c_str()));
 
     return GetLastError() == NOERROR;
@@ -220,6 +225,12 @@ bool KakaoStateManager::SendMessage()
     return true;
 }
 
+void KakaoStateManager::RunThread()
+{
+    _messageThread   = std::thread { &KakaoStateManager::HandleMessageLoop, this };
+    _messageThreadId = GetThreadId(_messageThread.native_handle());
+}
+
 void KakaoStateManager::HandleMessageLoop()
 {
     _hookHandle = HookStart(_currentProcessId, ktmac::HandleWindowHook, this);
@@ -235,12 +246,13 @@ void KakaoStateManager::HandleMessageLoop()
     _hookHandle = NULL;
 }
 
-void KakaoStateManager::Clean()
+void KakaoStateManager::Clean(bool clearHandlerList)
 {
     PostThreadMessage(_messageThreadId, WM_QUIT, NULL, NULL);
     _messageThread.join();
 
-    _handlerList.clear();
+    if (clearHandlerList)
+        _handlerList.clear();
     _messageThreadId  = NULL;
     _currentState     = KakaoState::NotRunning;
     _currentProcessId = NULL;
@@ -313,6 +325,24 @@ void KakaoStateManager::FindInitialState()
         _currentState = KakaoState::ChatroomListIsVisible;
     else
         _currentState = KakaoState::MiscIsVisible;
+}
+
+void KakaoStateManager::HandleProcessHook(ProcessWatcherMessage message)
+{
+    using namespace std::chrono_literals;
+
+    if (message == ProcessWatcherMessage::Stopped)
+    {
+        Clean(false);
+        _currentState = KakaoState::NotRunning;
+        CallHandlers();
+    }
+    else
+    {
+        FindInitialState();
+        CallHandlers();
+        RunThread();
+    }
 }
 
 void KakaoStateManager::HandleWindowHook(HWND window, DWORD event)

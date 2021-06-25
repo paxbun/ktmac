@@ -19,32 +19,39 @@ using namespace ktmac;
 
 int main()
 {
-    KakaoStateManager manager {
-        [](KakaoState state) {
-            switch (state)
-            {
-                HANDLE_CASE(NotRunning)
-                HANDLE_CASE(LoggedOut)
-                HANDLE_CASE(Background)
-                HANDLE_CASE(Locked)
-                HANDLE_CASE(ContactListIsVisible)
-                HANDLE_CASE(ChatroomListIsVisible)
-                HANDLE_CASE(MiscIsVisible)
-                HANDLE_CASE(ChatroomIsVisible)
-            }
-        },
-    };
+    if (!ProcessWatcherSocket::InitializeWinSock())
+        return 1;
 
-    std::string message;
-    while (true)
     {
-        std::getline(std::cin, message);
-        if (message.empty())
-            break;
+        KakaoStateManager manager {
+            [](KakaoState state) {
+                switch (state)
+                {
+                    HANDLE_CASE(NotRunning)
+                    HANDLE_CASE(LoggedOut)
+                    HANDLE_CASE(Background)
+                    HANDLE_CASE(Locked)
+                    HANDLE_CASE(ContactListIsVisible)
+                    HANDLE_CASE(ChatroomListIsVisible)
+                    HANDLE_CASE(MiscIsVisible)
+                    HANDLE_CASE(ChatroomIsVisible)
+                }
+            },
+        };
 
-        if (!manager.SetMessage(message) || !manager.SendMessage())
-            std::cout << "Message was not sent." << std::endl;
+        std::string message;
+        while (true)
+        {
+            std::getline(std::cin, message);
+            if (message.empty())
+                break;
+
+            if (!manager.SetMessage(message) || !manager.SendMessage())
+                std::cout << "Message was not sent." << std::endl;
+        }
+
+        std::cout << "Waiting for cleanup..." << std::endl;
     }
 
-    std::cout << "Waiting for cleanup..." << std::endl;
+    ProcessWatcherSocket::UninitializeWinSock();
 }

@@ -4,6 +4,8 @@
 #ifndef KTMAC_KAKAO_STATE_MANAGER_HH
 #define KTMAC_KAKAO_STATE_MANAGER_HH
 
+#include <ktmac/ProcessWatcherSocket.hh>
+
 #include <Windows.h>
 
 #include <functional>
@@ -47,6 +49,8 @@ class KakaoStateManager
 
     HWINEVENTHOOK _hookHandle;
 
+    ProcessWatcherSocket _watcherSocket;
+
   public:
     KakaoState GetCurrentState()
     {
@@ -88,9 +92,11 @@ class KakaoStateManager
         }
     }
 
+    void        RunThread();
     void        HandleMessageLoop();
-    void        Clean();
+    void        Clean(bool clearHandlerList = true);
     void        FindInitialState();
+    void        HandleProcessHook(ProcessWatcherMessage message);
     void        HandleWindowHook(HWND window, DWORD event);
     friend void HandleWindowHook(void* context, HWND window, DWORD event);
 };
