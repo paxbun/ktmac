@@ -29,6 +29,8 @@ try
         },
     };
 
+    socket.WaitUntilQuit();
+
     return 0;
 }
 catch (std::exception const& ex)
