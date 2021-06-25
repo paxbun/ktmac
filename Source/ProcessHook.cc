@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 #include <ktmac/ProcessWatcher.hh>
+#include <ktmac/ProcessWatcherSocket.hh>
 
 #include <Windows.h>
 
@@ -16,23 +17,17 @@ using namespace ktmac;
 int Run(int portNumber)
 try
 {
+    ProcessWatcherSocket socket { ProcessWatcherSocket::MakeClientSocket(portNumber) };
+
     ProcessWatcher watcher {
         "KakaoTalk.exe",
-        [portNumber](ProcessState state) {
+        [&socket](ProcessState state) {
             if (state == ProcessState::Running)
-                MessageBox(NULL,
-                           "KakaoTalk is running...",
-                           "ktmac-process-hook notification",
-                           MB_OK | MB_ICONINFORMATION);
+                socket.Send(ProcessWatcherMessage::Running);
             else
-                MessageBox(NULL,
-                           "KakaoTalk has stopped...",
-                           "ktmac-process-hook notification",
-                           MB_OK | MB_ICONINFORMATION);
+                socket.Send(ProcessWatcherMessage::Stopped);
         },
     };
-
-    std::this_thread::sleep_for(std::chrono::seconds { 20 });
 
     return 0;
 }
@@ -48,9 +43,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR commandLine, int)
         return 1;
 
     int portNumber = 0;
-    /*if (std::from_chars(commandLine, commandLine + strlen(commandLine), portNumber).ec
+    if (std::from_chars(commandLine, commandLine + strlen(commandLine), portNumber).ec
         != std::errc {})
-        return 1;*/
+        return 1;
 
     if (!ProcessWatcher::InitializeCom())
         return 1;
