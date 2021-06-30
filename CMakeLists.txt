@@ -26,6 +26,7 @@ target_include_directories(ktmac-process-hook PUBLIC ${PROJECT_SOURCE_DIR}/Publi
 add_library(ktmac-core ${PROJECT_SOURCE_DIR}/Source/KakaoStateManager.cc)
 target_link_libraries(ktmac-core PUBLIC ktmac-process-watcher-socket ktmac-window-hook)
 target_include_directories(ktmac-core PUBLIC ${PROJECT_SOURCE_DIR}/Public)
+add_dependencies(ktmac-core ktmac-process-hook)
 
 # -------------------------------------------- Tests  -------------------------------------------- #
 
