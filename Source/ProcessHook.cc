@@ -39,7 +39,7 @@ catch (std::exception const& ex)
     return 1;
 }
 
-int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR commandLine, int)
+int WINAPI WinMain(__in HINSTANCE, __in_opt HINSTANCE, __in LPSTR commandLine, __in int)
 {
     if (!ProcessWatcher::CheckAdministratorPrivilege())
         return 1;
