@@ -63,14 +63,16 @@ FixNamespaceComments: false
 
 IncludeBlocks: Regroup
 IncludeCategories:
-  - Regex: "^<.*/.*\\.(hh|hpp|h)>"
+  - Regex: "^<ktmac/.*\\.(hh|hpp|h)>"
     Priority: 1
-  - Regex: "^<tlhelp32.h>"
-    Priority: 3
-  - Regex: "^<.*\\.(hh|hpp|h)>"
+  - Regex: "^<.*/.*\\.(hh|hpp|h)>"
     Priority: 2
-  - Regex: ".*"
+  - Regex: "^<tlhelp32.h>"
     Priority: 4
+  - Regex: "^<.*\\.(hh|hpp|h)>"
+    Priority: 3
+  - Regex: ".*"
+    Priority: 5
 IncludeIsMainRegex: '(Test)?$'
 
 IndentCaseLabels: false
