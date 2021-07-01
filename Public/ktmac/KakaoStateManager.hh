@@ -44,6 +44,9 @@ class KakaoStateManager
     using HandlerType = std::function<void(KakaoState state)>;
 
   private:
+    static void HandleWindowHook(void* context, HWND window, DWORD event);
+
+  private:
     std::vector<HandlerType> _handlerList;
 
     std::thread _messageThread;
@@ -104,13 +107,12 @@ class KakaoStateManager
         }
     }
 
-    void        RunThread();
-    void        HandleMessageLoop();
-    void        Clean(bool clearHandlerList = true, bool clearProcessIdList = true);
-    void        FindInitialState();
-    void        HandleProcessHook(ProcessWatcherMessage message, uint32_t processId);
-    void        HandleWindowHook(HWND window, DWORD event);
-    friend void HandleWindowHook(void* context, HWND window, DWORD event);
+    void RunThread();
+    void HandleMessageLoop();
+    void Clean(bool clearHandlerList = true, bool clearProcessIdList = true);
+    void FindInitialState();
+    void HandleProcessHook(ProcessWatcherMessage message, uint32_t processId);
+    void HandleWindowHook(HWND window, DWORD event);
 };
 
 }
