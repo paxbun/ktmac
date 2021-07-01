@@ -158,8 +158,8 @@ ProcessWatcherSocket::ProcessWatcherSocket(ProcessWatcherSocket&& socket) noexce
     _client { socket._client },
     _socket { socket._socket },
     _socketType { socket._socketType },
-    _handler { std::move(_handler) },
-    _recvThread { std::move(_recvThread) }
+    _handler { std::move(socket._handler) },
+    _recvThread { std::move(socket._recvThread) }
 {
     socket._client     = nullptr;
     socket._socket     = nullptr;
