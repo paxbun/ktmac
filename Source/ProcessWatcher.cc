@@ -128,15 +128,29 @@ ProcessWatcher::ProcessWatcher(std::string&& processName, ProcessStateHandler&& 
     _services { std::move(CreateWbemServices(_wbemLocator.Get())) },
     _unsecuredApt { std::move(CreateUnsecuredApartment()) },
     _processStartDetector {
-        new WmiEventSink([this](auto, auto) {
+        new WmiEventSink([this](long numObjects, IWbemClassObject** objects) {
             if (_stateHandler)
-                _stateHandler(ProcessState::Running);
+            {
+                for (long i = 0; i < numObjects; ++i)
+                {
+                    VARIANT value = {};
+                    objects[i]->Get(L"ProcessID", 0, &value, NULL, NULL);
+                    _stateHandler(ProcessState::Running, value.uintVal);
+                }
+            }
         }),
     },
     _processStopDetector {
-        new WmiEventSink([this](auto, auto) {
+        new WmiEventSink([this](long numObjects, IWbemClassObject** objects) {
             if (_stateHandler)
-                _stateHandler(ProcessState::Stopped);
+            {
+                for (long i = 0; i < numObjects; ++i)
+                {
+                    VARIANT value = {};
+                    objects[i]->Get(L"ProcessID", 0, &value, NULL, NULL);
+                    _stateHandler(ProcessState::Stopped, value.uintVal);
+                }
+            }
         }),
     },
     _processStartSink { CreateObjectSink(_processStartDetector, _unsecuredApt.Get()) },
@@ -145,7 +159,7 @@ ProcessWatcher::ProcessWatcher(std::string&& processName, ProcessStateHandler&& 
     _stateHandler { std::move(stateHandler) }
 {
     std::string processStartQuery
-        = "SELECT * FROM win32_ProcessStartTrace where processname LIKE '%" + _processName + "%'";
+        = "SELECT * FROM Win32_ProcessStartTrace where ProcessName LIKE '%" + _processName + "%'";
     if (FAILED(_services->ExecNotificationQueryAsync(_bstr_t("WQL"),
                                                      _bstr_t(processStartQuery.c_str()),
                                                      WBEM_FLAG_SEND_STATUS,
@@ -154,7 +168,7 @@ ProcessWatcher::ProcessWatcher(std::string&& processName, ProcessStateHandler&& 
         throw std::runtime_error { "Failed to execute win32_ProcessStartTrace query." };
 
     std::string processStopQuery
-        = "SELECT * FROM win32_ProcessStopTrace where processname LIKE '%" + _processName + "%'";
+        = "SELECT * FROM Win32_ProcessStopTrace where ProcessName LIKE '%" + _processName + "%'";
     if (FAILED(_services->ExecNotificationQueryAsync(_bstr_t("WQL"),
                                                      _bstr_t(processStopQuery.c_str()),
                                                      WBEM_FLAG_SEND_STATUS,

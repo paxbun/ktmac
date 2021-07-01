@@ -7,6 +7,7 @@
 #include <Windows.h>
 
 #include <charconv>
+#include <cstdint>
 #include <cstring>
 #include <iostream>
 #include <stdexcept>
@@ -21,11 +22,11 @@ try
 
     ProcessWatcher watcher {
         "KakaoTalk.exe",
-        [&socket](ProcessState state) {
+        [&socket](ProcessState state, uint32_t processId) {
             if (state == ProcessState::Running)
-                socket.Send(ProcessWatcherMessage::Running);
+                socket.Send(ProcessWatcherMessage::Running, processId);
             else
-                socket.Send(ProcessWatcherMessage::Stopped);
+                socket.Send(ProcessWatcherMessage::Stopped, processId);
         },
     };
 

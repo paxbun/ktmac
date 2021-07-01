@@ -18,7 +18,8 @@ enum class ProcessWatcherMessage : uint8_t
     Quit
 };
 
-using ProcessWatcherSocketHandler = std::function<void(ProcessWatcherMessage message)>;
+using ProcessWatcherSocketHandler
+    = std::function<void(ProcessWatcherMessage message, uint32_t processId)>;
 
 class ProcessWatcherSocket
 {
@@ -55,7 +56,7 @@ class ProcessWatcherSocket
 
   public:
     void WaitUntilQuit();
-    void Send(ProcessWatcherMessage message);
+    void Send(ProcessWatcherMessage message, uint32_t processId);
 
   private:
     void HandleIncomingData();

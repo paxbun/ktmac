@@ -20,7 +20,7 @@ enum class ProcessState
     Stopped,
 };
 
-using ProcessStateHandler = std::function<void(ProcessState state)>;
+using ProcessStateHandler = std::function<void(ProcessState state, uint32_t processId)>;
 
 class ProcessWatcher
 {

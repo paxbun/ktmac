@@ -187,25 +187,29 @@ void ProcessWatcherSocket::WaitUntilQuit()
         _recvThread.join();
 }
 
-void ProcessWatcherSocket::Send(ProcessWatcherMessage message)
+void ProcessWatcherSocket::Send(ProcessWatcherMessage message, uint32_t processId)
 {
     if (_socketType == SocketType::Client)
     {
         if (message == ProcessWatcherMessage::Running || message == ProcessWatcherMessage::Stopped)
-            send((SOCKET)_socket, (const char*)&message, 1, 0);
+        {
+            send((SOCKET)_socket, (const char*)&message, sizeof message, 0);
+            send((SOCKET)_socket, (const char*)&processId, sizeof processId, 0);
+        }
     }
 }
 
 void ProcessWatcherSocket::HandleIncomingData()
 {
-    ProcessWatcherMessage message = ProcessWatcherMessage::Quit;
+    ProcessWatcherMessage message   = ProcessWatcherMessage::Quit;
+    uint32_t              processId = 0;
 
     if (_socketType == SocketType::Invalid)
         return;
 
     while (true)
     {
-        int result = recv((SOCKET)_socket, (char*)&message, 1, 0);
+        int result = recv((SOCKET)_socket, (char*)&message, sizeof message, 0);
         if (result <= 0)
             return;
 
@@ -213,9 +217,19 @@ void ProcessWatcherSocket::HandleIncomingData()
         {
             if (_handler)
             {
+                auto pProcessId = (char*)&processId;
+                int  lengthRead = 0;
+                while (lengthRead < sizeof processId)
+                {
+                    int result = recv((SOCKET)_socket, (char*)&processId, sizeof processId, 0);
+                    if (result <= 0)
+                        return;
+                    lengthRead += result;
+                }
+
                 if (message == ProcessWatcherMessage::Running
                     || message == ProcessWatcherMessage::Stopped)
-                    _handler(message);
+                    _handler(message, processId);
             }
         }
         else

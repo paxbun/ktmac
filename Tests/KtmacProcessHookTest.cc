@@ -5,6 +5,7 @@
 
 #include <Windows.h>
 
+#include <cstdint>
 #include <cstdio>
 #include <iostream>
 
@@ -17,11 +18,11 @@ int main(int argc, char* argv[])
     if (!ProcessWatcherSocket::InitializeWinSock())
         return 1;
 
-    auto handler = [](ProcessWatcherMessage message) {
+    auto handler = [](ProcessWatcherMessage message, uint32_t processId) {
         if (message == ProcessWatcherMessage::Running)
-            std::cout << "Running..." << std::endl;
+            std::cout << "Running(" << processId << ")..." << std::endl;
         else
-            std::cout << "Stopped..." << std::endl;
+            std::cout << "Stopped(" << processId << ")..." << std::endl;
     };
 
     {
