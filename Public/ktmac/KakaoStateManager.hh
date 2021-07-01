@@ -11,6 +11,7 @@
 #include <functional>
 #include <mutex>
 #include <thread>
+#include <unordered_set>
 #include <vector>
 
 namespace ktmac
@@ -41,7 +42,9 @@ class KakaoStateManager
     DWORD       _messageThreadId;
     KakaoState  _currentState;
 
-    DWORD _currentProcessId;
+    size_t                       _numProcesses;
+    uint32_t                     _currentProcessId;
+    std::unordered_set<uint32_t> _processIdList;
 
     HWND _loginWindow;
     HWND _mainWindow, _online, _contactList, _chatroomList, _misc, _lock;
@@ -94,9 +97,9 @@ class KakaoStateManager
 
     void        RunThread();
     void        HandleMessageLoop();
-    void        Clean(bool clearHandlerList = true);
+    void        Clean(bool clearHandlerList = true, bool clearProcessIdList = true);
     void        FindInitialState();
-    void        HandleProcessHook(ProcessWatcherMessage message);
+    void        HandleProcessHook(ProcessWatcherMessage message, uint32_t processId);
     void        HandleWindowHook(HWND window, DWORD event);
     friend void HandleWindowHook(void* context, HWND window, DWORD event);
 };
