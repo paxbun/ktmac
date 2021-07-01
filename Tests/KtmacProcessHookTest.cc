@@ -15,9 +15,6 @@ int main(int argc, char* argv[])
 {
     int portNumber = 23654;
 
-    if (!ProcessWatcherSocket::InitializeWinSock())
-        return 1;
-
     auto handler = [](ProcessWatcherMessage message, uint32_t processId) {
         if (message == ProcessWatcherMessage::Running)
             std::cout << "Running(" << processId << ")..." << std::endl;
@@ -25,10 +22,6 @@ int main(int argc, char* argv[])
             std::cout << "Stopped(" << processId << ")..." << std::endl;
     };
 
-    {
-        ProcessWatcherSocket socket { ProcessWatcherSocket::MakeServerSocket(portNumber, handler) };
-        std::this_thread::sleep_for(std::chrono::seconds { 10 });
-    }
-
-    ProcessWatcherSocket::UninitializeWinSock();
+    ProcessWatcherSocket socket { ProcessWatcherSocket::MakeServerSocket(portNumber, handler) };
+    std::this_thread::sleep_for(std::chrono::seconds { 10 });
 }

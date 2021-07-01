@@ -19,9 +19,6 @@ using namespace ktmac;
 
 int main()
 {
-    if (!ProcessWatcherSocket::InitializeWinSock())
-        return 1;
-
     {
         KakaoStateManager manager {
             [](KakaoState state) {
@@ -52,6 +49,4 @@ int main()
 
         std::cout << "Waiting for cleanup..." << std::endl;
     }
-
-    ProcessWatcherSocket::UninitializeWinSock();
 }
