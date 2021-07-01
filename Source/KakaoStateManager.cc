@@ -1,3 +1,4 @@
+#include "..\Public\ktmac\KakaoStateManager.hh"
 // Copyright (c) 2021 Chanjung Kim (paxbun). All rights reserved.
 // Licensed under the MIT License.
 
@@ -15,6 +16,86 @@
 #include <vector>
 
 using namespace std::placeholders;
+
+#pragma region ktmac::KakaoStateManager::Impl class definition
+
+namespace ktmac
+{
+
+struct KakaoStateManager::Impl
+{
+  private:
+    static void HandleWindowHook(void* context, HWND window, DWORD event);
+
+  private:
+    std::vector<HandlerPairType> _handlerList;
+
+    std::thread _messageThread;
+    std::mutex  _stateMtx;
+    DWORD       _messageThreadId;
+    KakaoState  _currentState;
+
+    size_t                       _numProcesses;
+    uint32_t                     _currentProcessId;
+    std::unordered_set<uint32_t> _processIdList;
+
+    HWND _loginWindow;
+    HWND _mainWindow, _online, _contactList, _chatroomList, _misc, _lock;
+    HWND _chatroomWindow;
+
+    HWINEVENTHOOK _hookHandle;
+
+    std::unique_ptr<class ProcessWatcherSocket> _watcherSocket;
+
+  public:
+    KakaoState GetCurrentState()
+    {
+        return _currentState;
+    }
+
+  public:
+    inline Impl() : Impl(std::initializer_list<HandlerPairType> {}) {}
+    Impl(std::initializer_list<HandlerPairType> init);
+    ~Impl();
+
+  public:
+    inline void AddHandler(HandlerPairType newHandler)
+    {
+        if (newHandler.second)
+        {
+            newHandler.second(newHandler.first, _currentState);
+            _handlerList.push_back(newHandler);
+        }
+    }
+
+    bool SetMessage(wchar_t const* message);
+
+    bool SetMessage(char const* message);
+
+#pragma push_macro("SendMessage")
+#undef SendMessage
+    bool SendMessage();
+#pragma pop_macro("SendMessage")
+
+  private:
+    inline void CallHandlers()
+    {
+        for (auto handler : _handlerList) handler.second(handler.first, _currentState);
+    }
+
+    void RunThread();
+    void HandleMessageLoop();
+    void Clean(bool clearHandlerList = true, bool clearProcessIdList = true);
+    void FindInitialState();
+    void HandleProcessHook(ProcessWatcherMessage message, uint32_t processId);
+    void HandleWindowHook(HWND window, DWORD event);
+};
+
+}
+
+#pragma endregion
+
+#pragma region Anonymous functions
 
 namespace
 {
@@ -122,16 +203,20 @@ HWND FindKakaoTalkLoginWindow()
 
 }
 
+#pragma endregion
+
+#pragma region ktmac::KakaoStateManager::Impl member function definitions
+
 namespace ktmac
 {
 
-void KakaoStateManager::HandleWindowHook(void* context, HWND window, DWORD event)
+void KakaoStateManager::Impl::HandleWindowHook(void* context, HWND window, DWORD event)
 {
-    auto& manager = *(ktmac::KakaoStateManager*)context;
+    auto& manager = *(ktmac::KakaoStateManager::Impl*)context;
     manager.HandleWindowHook(window, event);
 }
 
-KakaoStateManager::KakaoStateManager(std::initializer_list<HandlerType> handlerList) :
+KakaoStateManager::Impl::Impl(std::initializer_list<HandlerPairType> handlerList) :
     _handlerList(std::move(handlerList)),
     _messageThread {},
     _stateMtx {},
@@ -151,7 +236,7 @@ KakaoStateManager::KakaoStateManager(std::initializer_list<HandlerType> handlerL
     _watcherSocket {
         std::make_unique<ProcessWatcherSocket>(ProcessWatcherSocket::MakeServerSocket(
             23456,
-            std::bind(&KakaoStateManager::HandleProcessHook, this, _1, _2))),
+            std::bind(&KakaoStateManager::Impl::HandleProcessHook, this, _1, _2))),
     }
 {
     FindInitialState();
@@ -159,12 +244,12 @@ KakaoStateManager::KakaoStateManager(std::initializer_list<HandlerType> handlerL
     RunThread();
 }
 
-KakaoStateManager::~KakaoStateManager()
+KakaoStateManager::Impl::~Impl()
 {
     Clean();
 }
 
-bool KakaoStateManager::SetMessage(std::wstring const& message)
+bool KakaoStateManager::Impl::SetMessage(wchar_t const* message)
 {
     HWND chatroom = NULL;
     {
@@ -179,12 +264,12 @@ bool KakaoStateManager::SetMessage(std::wstring const& message)
         return false;
 
     SetLastError(NOERROR);
-    SendMessageW(richEdit, WM_SETTEXT, NULL, reinterpret_cast<LPARAM>(message.c_str()));
+    SendMessageW(richEdit, WM_SETTEXT, NULL, reinterpret_cast<LPARAM>(message));
 
     return GetLastError() == NOERROR;
 }
 
-bool KakaoStateManager::SetMessage(std::string const& message)
+bool KakaoStateManager::Impl::SetMessage(char const* message)
 {
     HWND chatroom = NULL;
     {
@@ -199,14 +284,14 @@ bool KakaoStateManager::SetMessage(std::string const& message)
         return false;
 
     SetLastError(NOERROR);
-    SendMessageA(richEdit, WM_SETTEXT, NULL, reinterpret_cast<LPARAM>(message.c_str()));
+    SendMessageA(richEdit, WM_SETTEXT, NULL, reinterpret_cast<LPARAM>(message));
 
     return GetLastError() == NOERROR;
 }
 
 #pragma push_macro("SendMessage")
 #undef SendMessage
-bool KakaoStateManager::SendMessage()
+bool KakaoStateManager::Impl::SendMessage()
 #pragma pop_macro("SendMessage")
 {
     HWND chatroom = NULL;
@@ -230,13 +315,13 @@ bool KakaoStateManager::SendMessage()
     return true;
 }
 
-void KakaoStateManager::RunThread()
+void KakaoStateManager::Impl::RunThread()
 {
-    _messageThread   = std::thread { &KakaoStateManager::HandleMessageLoop, this };
+    _messageThread   = std::thread { &KakaoStateManager::Impl::HandleMessageLoop, this };
     _messageThreadId = GetThreadId(_messageThread.native_handle());
 }
 
-void KakaoStateManager::HandleMessageLoop()
+void KakaoStateManager::Impl::HandleMessageLoop()
 {
     if (_currentProcessId)
         _hookHandle = HookStart(_currentProcessId, HandleWindowHook, this);
@@ -253,7 +338,7 @@ void KakaoStateManager::HandleMessageLoop()
     _hookHandle = NULL;
 }
 
-void KakaoStateManager::Clean(bool clearHandlerList, bool clearProcessIdList)
+void KakaoStateManager::Impl::Clean(bool clearHandlerList, bool clearProcessIdList)
 {
     PostThreadMessage(_messageThreadId, WM_QUIT, NULL, NULL);
     _messageThread.join();
@@ -279,7 +364,7 @@ void KakaoStateManager::Clean(bool clearHandlerList, bool clearProcessIdList)
     _hookHandle     = NULL;
 }
 
-void KakaoStateManager::FindInitialState()
+void KakaoStateManager::Impl::FindInitialState()
 {
     using namespace std::chrono_literals;
 
@@ -351,7 +436,7 @@ void KakaoStateManager::FindInitialState()
         _currentState = KakaoState::MiscIsVisible;
 }
 
-void KakaoStateManager::HandleProcessHook(ProcessWatcherMessage message, uint32_t processId)
+void KakaoStateManager::Impl::HandleProcessHook(ProcessWatcherMessage message, uint32_t processId)
 {
     using namespace std::chrono_literals;
 
@@ -393,7 +478,7 @@ void KakaoStateManager::HandleProcessHook(ProcessWatcherMessage message, uint32_
     }
 }
 
-void KakaoStateManager::HandleWindowHook(HWND window, DWORD event)
+void KakaoStateManager::Impl::HandleWindowHook(HWND window, DWORD event)
 {
     if (_currentState != KakaoState::NotRunning)
     {
@@ -584,3 +669,72 @@ void KakaoStateManager::HandleWindowHook(HWND window, DWORD event)
 }
 
 }
+
+#pragma endregion
+
+#pragma region ktmac::KakaoStateManager member function definitions
+
+namespace ktmac
+{
+
+KakaoStateManager& KakaoStateManager::operator=(KakaoStateManager&& manager) noexcept
+{
+    if (this != &manager)
+    {
+        delete _impl;
+        _impl         = manager._impl;
+        manager._impl = nullptr;
+    }
+    return *this;
+}
+
+KakaoState ktmac::KakaoStateManager::GetCurrentState()
+{
+    if (_impl)
+        return _impl->GetCurrentState();
+    return KakaoState::NotRunning;
+}
+
+KakaoStateManager::KakaoStateManager(std::initializer_list<HandlerPairType> init) :
+    _impl { new KakaoStateManager::Impl { std::move(init) } }
+{}
+
+KakaoStateManager::~KakaoStateManager()
+{
+    delete _impl;
+    _impl = nullptr;
+}
+
+void KakaoStateManager::AddHandler(HandlerPairType newHandler)
+{
+    if (_impl)
+        return _impl->AddHandler(newHandler);
+}
+
+bool KakaoStateManager::SetMessage(wchar_t const* message)
+{
+    if (_impl)
+        return _impl->SetMessage(message);
+    return false;
+}
+
+bool KakaoStateManager::SetMessage(char const* message)
+{
+    if (_impl)
+        return _impl->SetMessage(message);
+    return false;
+}
+
+#pragma push_macro("SendMessage")
+#undef SendMessage
+bool KakaoStateManager::SendMessage()
+{
+    if (_impl)
+        return _impl->SendMessage();
+    return false;
+}
+#pragma pop_macro("SendMessage")
+
+}
+
+#pragma endregion

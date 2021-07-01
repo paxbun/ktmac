@@ -6,13 +6,12 @@
 
 #include <ktmac/ProcessWatcherMessage.hh>
 
-#include <Windows.h>
-
 #include <functional>
 #include <memory>
 #include <mutex>
 #include <thread>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 namespace ktmac
@@ -40,79 +39,62 @@ class __declspec(dllimport) KakaoStateManager
 class KakaoStateManager
 #endif
 {
-  public:
-    using HandlerType = std::function<void(KakaoState state)>;
-
   private:
-    static void HandleWindowHook(void* context, HWND window, DWORD event);
-
-  private:
-    std::vector<HandlerType> _handlerList;
-
-    std::thread _messageThread;
-    std::mutex  _stateMtx;
-    DWORD       _messageThreadId;
-    KakaoState  _currentState;
-
-    size_t                       _numProcesses;
-    uint32_t                     _currentProcessId;
-    std::unordered_set<uint32_t> _processIdList;
-
-    HWND _loginWindow;
-    HWND _mainWindow, _online, _contactList, _chatroomList, _misc, _lock;
-    HWND _chatroomWindow;
-
-    HWINEVENTHOOK _hookHandle;
-
-    std::unique_ptr<class ProcessWatcherSocket> _watcherSocket;
+    struct Impl;
 
   public:
-    KakaoState GetCurrentState()
+    using HandlerContextType = void*;
+    using HandlerType        = void (*)(HandlerContextType context, KakaoState state);
+    using HandlerPairType    = std::pair<HandlerContextType, HandlerType>;
+
+  private:
+    Impl* _impl;
+
+  public:
+    KakaoState GetCurrentState();
+
+  public:
+    inline KakaoStateManager() : KakaoStateManager(std::initializer_list<HandlerPairType> {}) {}
+    inline KakaoStateManager(KakaoStateManager&& manager) noexcept : _impl { manager._impl }
     {
-        return _currentState;
+        manager._impl = nullptr;
     }
 
-  public:
-    inline KakaoStateManager() : KakaoStateManager(std::initializer_list<HandlerType> {}) {}
-    KakaoStateManager(std::initializer_list<HandlerType> init);
+    KakaoStateManager& operator=(KakaoStateManager&& manager) noexcept;
+    KakaoStateManager(std::initializer_list<HandlerPairType> init);
     ~KakaoStateManager();
 
   public:
-    inline void AddHandler(HandlerType&& newHandler)
+    void AddHandler(HandlerPairType newHandler);
+
+    inline void AddHandler(HandlerContextType context, HandlerType handler)
     {
-        _handlerList.push_back(std::move(newHandler));
+        AddHandler(std::make_pair(context, handler));
     }
 
-    inline void operator+=(HandlerType&& newHandler)
+    inline void operator+=(HandlerPairType newHandler)
     {
-        AddHandler(std::move(newHandler));
+        AddHandler(newHandler);
     }
 
-    bool SetMessage(std::wstring const& message);
+    bool SetMessage(wchar_t const* message);
 
-    bool SetMessage(std::string const& message);
+    inline bool SetMessage(std::wstring const& message)
+    {
+        return SetMessage(message.c_str());
+    }
+
+    bool SetMessage(char const* message);
+
+    inline bool SetMessage(std::string const& message)
+    {
+        return SetMessage(message.c_str());
+    }
 
 #pragma push_macro("SendMessage")
 #undef SendMessage
     bool SendMessage();
 #pragma pop_macro("SendMessage")
-
-  private:
-    inline void CallHandlers()
-    {
-        for (auto&& handler : _handlerList)
-        {
-            if (handler)
-                handler(_currentState);
-        }
-    }
-
-    void RunThread();
-    void HandleMessageLoop();
-    void Clean(bool clearHandlerList = true, bool clearProcessIdList = true);
-    void FindInitialState();
-    void HandleProcessHook(ProcessWatcherMessage message, uint32_t processId);
-    void HandleWindowHook(HWND window, DWORD event);
 };
 
 }
