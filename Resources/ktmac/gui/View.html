@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    <title>Simple KakaoTalk macro</title>
+
+    <script>
+        window.addEventListener("load", function () {
+            const button = document.getElementById("test-btn");
+            if (!button) return;
+
+            button.addEventListener("click", function () {
+                myCustomFunction("Hello, world!", "Hello from JavaScript!");
+            });
+        });
+    </script>
+
+</head>
+<body>
+
+    <button id="test-btn">Hello, world!</button>
+
+</body>
+</html>
