@@ -54,6 +54,9 @@ void ProcessWatcherSocket::UninitializeWinSock()
 ProcessWatcherSocket ProcessWatcherSocket::MakeServerSocket(int portNumber,
                                                             ProcessWatcherSocketHandler&& handler)
 {
+    if (!InitializeWinSock())
+        throw std::runtime_error { "Windows Socket initialization failed." };
+
     HANDLE client = RunClient(portNumber);
     if (client == NULL)
         throw std::runtime_error { "Failed to launch client." };
@@ -151,6 +154,19 @@ ProcessWatcherSocket::ProcessWatcherSocket(void*                         socket,
     _recvThread { &ProcessWatcherSocket::HandleIncomingData, this }
 {}
 
+ProcessWatcherSocket::ProcessWatcherSocket(ProcessWatcherSocket&& socket) noexcept :
+    _client { socket._client },
+    _socket { socket._socket },
+    _socketType { socket._socketType },
+    _handler { std::move(_handler) },
+    _recvThread { std::move(_recvThread) }
+{
+    socket._client     = nullptr;
+    socket._socket     = nullptr;
+    socket._socketType = SocketType::Invalid;
+    socket._handler    = nullptr;
+}
+
 ProcessWatcherSocket::~ProcessWatcherSocket()
 {
     SOCKET socket = (SOCKET)_socket;
@@ -179,6 +195,8 @@ ProcessWatcherSocket::~ProcessWatcherSocket()
         _socketType = SocketType::Invalid;
         _handler    = nullptr;
     }
+
+    UninitializeWinSock();
 }
 
 void ProcessWatcherSocket::WaitUntilQuit()

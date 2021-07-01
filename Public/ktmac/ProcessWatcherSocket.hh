@@ -1,8 +1,10 @@
 // Copyright (c) 2021 Chanjung Kim (paxbun). All rights reserved.
 // Licensed under the MIT License.
 
-#ifndef KTMAC_SOCKET_HH
-#define KTMAC_SOCKET_HH
+#ifndef KTMAC_PROCESS_WATCHER_SOCKET_HH
+#define KTMAC_PROCESS_WATCHER_SOCKET_HH
+
+#include <ktmac/ProcessWatcherMessage.hh>
 
 #include <cstdint>
 #include <functional>
@@ -10,13 +12,6 @@
 
 namespace ktmac
 {
-
-enum class ProcessWatcherMessage : uint8_t
-{
-    Running,
-    Stopped,
-    Quit
-};
 
 using ProcessWatcherSocketHandler
     = std::function<void(ProcessWatcherMessage message, uint32_t processId)>;
@@ -46,6 +41,7 @@ class ProcessWatcherSocket
     std::thread                 _recvThread;
 
   public:
+    ProcessWatcherSocket(ProcessWatcherSocket&&) noexcept;
     ~ProcessWatcherSocket();
 
   private:
