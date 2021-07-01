@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 #include <ktmac/KakaoStateManager.hh>
+#include <ktmac/ProcessWatcherSocket.hh>
 #include <ktmac/WindowHook.hh>
 
 #include <Windows.h>
@@ -148,9 +149,9 @@ KakaoStateManager::KakaoStateManager(std::initializer_list<HandlerType> handlerL
     _chatroomWindow { NULL },
     _hookHandle { NULL },
     _watcherSocket {
-        ProcessWatcherSocket::MakeServerSocket(
+        std::make_unique<ProcessWatcherSocket>(ProcessWatcherSocket::MakeServerSocket(
             23456,
-            std::bind(&KakaoStateManager::HandleProcessHook, this, _1, _2)),
+            std::bind(&KakaoStateManager::HandleProcessHook, this, _1, _2))),
     }
 {
     FindInitialState();

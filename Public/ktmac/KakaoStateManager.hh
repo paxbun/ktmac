@@ -4,11 +4,12 @@
 #ifndef KTMAC_KAKAO_STATE_MANAGER_HH
 #define KTMAC_KAKAO_STATE_MANAGER_HH
 
-#include <ktmac/ProcessWatcherSocket.hh>
+#include <ktmac/ProcessWatcherMessage.hh>
 
 #include <Windows.h>
 
 #include <functional>
+#include <memory>
 #include <mutex>
 #include <thread>
 #include <unordered_set>
@@ -52,7 +53,7 @@ class KakaoStateManager
 
     HWINEVENTHOOK _hookHandle;
 
-    ProcessWatcherSocket _watcherSocket;
+    std::unique_ptr<class ProcessWatcherSocket> _watcherSocket;
 
   public:
     KakaoState GetCurrentState()
