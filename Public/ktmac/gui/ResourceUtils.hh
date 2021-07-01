@@ -9,7 +9,7 @@
 namespace ktmac::gui
 {
 
-std::string_view LoadResource(int name);
+std::string_view LoadResource(int resType, int name);
 
 }
 

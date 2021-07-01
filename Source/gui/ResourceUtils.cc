@@ -5,13 +5,15 @@
 
 #include <Windows.h>
 
+#include <string_view>
+
 namespace ktmac::gui
 {
 
-std::string_view LoadResource(int name)
+std::string_view LoadResource(int resType, int name)
 {
     HMODULE module = GetModuleHandle(NULL);
-    HRSRC   rc = FindResource(module, MAKEINTRESOURCE(name), MAKEINTRESOURCE(KTMAC_RESTYPE_HTML));
+    HRSRC   rc     = FindResource(module, MAKEINTRESOURCE(name), MAKEINTRESOURCE(resType));
     if (rc == NULL)
         return {};
 
