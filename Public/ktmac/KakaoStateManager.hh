@@ -30,7 +30,15 @@ enum class KakaoState
     ChatroomIsVisible,
 };
 
+#ifdef KTMAC_CORE_SHARED
+#    ifdef KTMAC_CORE_EXPORT
+class __declspec(dllexport) KakaoStateManager
+#    else
+class __declspec(dllimport) KakaoStateManager
+#    endif
+#else
 class KakaoStateManager
+#endif
 {
   public:
     using HandlerType = std::function<void(KakaoState state)>;
