@@ -45,7 +45,7 @@ struct KakaoStateManager::Impl
 
     HWINEVENTHOOK _hookHandle;
 
-    std::unique_ptr<class ProcessWatcherSocket> _watcherSocket;
+    ProcessWatcherSocket _watcherSocket;
 
   public:
     KakaoState GetCurrentState()
@@ -234,9 +234,9 @@ KakaoStateManager::Impl::Impl(std::initializer_list<HandlerPairType> handlerList
     _chatroomWindow { NULL },
     _hookHandle { NULL },
     _watcherSocket {
-        std::make_unique<ProcessWatcherSocket>(ProcessWatcherSocket::MakeServerSocket(
+        ProcessWatcherSocket::MakeServerSocket(
             23456,
-            std::bind(&KakaoStateManager::Impl::HandleProcessHook, this, _1, _2))),
+            std::bind(&KakaoStateManager::Impl::HandleProcessHook, this, _1, _2)),
     }
 {
     FindInitialState();
@@ -317,8 +317,11 @@ bool KakaoStateManager::Impl::SendMessage()
 
 void KakaoStateManager::Impl::RunThread()
 {
-    _messageThread   = std::thread { &KakaoStateManager::Impl::HandleMessageLoop, this };
-    _messageThreadId = GetThreadId(_messageThread.native_handle());
+    if (_currentProcessId)
+    {
+        _messageThread   = std::thread { &KakaoStateManager::Impl::HandleMessageLoop, this };
+        _messageThreadId = GetThreadId(_messageThread.native_handle());
+    }
 }
 
 void KakaoStateManager::Impl::HandleMessageLoop()
@@ -378,12 +381,7 @@ void KakaoStateManager::Impl::FindInitialState()
     while (true)
     {
         _loginWindow = FindKakaoTalkLoginWindow();
-        if (MainWindow mainWindow; !FindKakaoTalkMainWindow(mainWindow))
-        {
-            _currentState = KakaoState::NotRunning;
-            return;
-        }
-        else
+        if (MainWindow mainWindow; FindKakaoTalkMainWindow(mainWindow))
         {
             _mainWindow   = mainWindow.mainWindow;
             _online       = mainWindow.online;

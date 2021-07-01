@@ -41,7 +41,6 @@ class ProcessWatcherSocket
     std::thread                 _recvThread;
 
   public:
-    ProcessWatcherSocket(ProcessWatcherSocket&&) noexcept;
     ~ProcessWatcherSocket();
 
   private:
