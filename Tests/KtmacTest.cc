@@ -21,18 +21,21 @@ int main()
 {
     {
         KakaoStateManager manager {
-            [](KakaoState state) {
-                switch (state)
-                {
-                    HANDLE_CASE(NotRunning)
-                    HANDLE_CASE(LoggedOut)
-                    HANDLE_CASE(Background)
-                    HANDLE_CASE(Locked)
-                    HANDLE_CASE(ContactListIsVisible)
-                    HANDLE_CASE(ChatroomListIsVisible)
-                    HANDLE_CASE(MiscIsVisible)
-                    HANDLE_CASE(ChatroomIsVisible)
-                }
+            {
+                nullptr,
+                [](auto, KakaoState state) {
+                    switch (state)
+                    {
+                        HANDLE_CASE(NotRunning)
+                        HANDLE_CASE(LoggedOut)
+                        HANDLE_CASE(Background)
+                        HANDLE_CASE(Locked)
+                        HANDLE_CASE(ContactListIsVisible)
+                        HANDLE_CASE(ChatroomListIsVisible)
+                        HANDLE_CASE(MiscIsVisible)
+                        HANDLE_CASE(ChatroomIsVisible)
+                    }
+                },
             },
         };
 
