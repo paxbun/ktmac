@@ -1,24 +1,132 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
-
+    <meta charset="utf-8" />
     <title>Simple KakaoTalk macro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
 
+        .ktmac-kakao-state-not-running {
+            background-color: red;
+            color: white;
+        }
+
+        .ktmac-kakao-state-logged-out {
+            background-color: lightgray;
+            color: black;
+        }
+
+        .ktmac-kakao-state-background {
+            background-color: transparent;
+            color: black;
+        }
+
+        .ktmac-kakao-state-locked {
+            background-color: yellow;
+            color: black;
+        }
+
+        .ktmac-kakao-state-contact-list-is-visible,
+        .ktmac-kakao-state-chatroom-list-is-visible,
+        .ktmac-kakao-state-misc-is-visible {
+            background-color: greenyellow;
+            color: black;
+        }
+
+        .ktmac-kakao-state-chatroom-is-visible {
+            background-color: blue;
+            color: white;
+        }
+
+        .ktmac-kakao-state {
+            position: absolute;
+            top: 0vh;
+            display: block;
+            width: 100vw;
+            height: 20vh;
+        }
+
+        .ktmac-message-box {
+            position: absolute;
+            top: 20vh;
+            display: block;
+            width: 100vw;
+            height: 60vh;
+            resize: none;
+        }
+
+        .ktmac-message-btn {
+            position: absolute;
+            top: 80vh;
+            display: block;
+            width: 100vw;
+            height: 20vh;
+            text-align: left;
+        }
+
+        body {
+            overflow: hidden;
+        }
+    </style>
     <script>
-        window.addEventListener("load", function () {
-            const button = document.getElementById("test-btn");
-            if (!button) return;
+        const stateMessages = {
+            "not-running": "카카오톡 감지 안됨",
+            "logged-out": "로그인 필요",
+            "background": "카카오톡 실행 중 (창 없음)",
+            "locked": "카카오톡 실행 중 (잠금 상태)",
+            "contact-list-is-visible": "연락처 목록 표시 중",
+            "chatroom-list-is-visible": "채팅방 목록 표시 중",
+            "misc-is-visible": "기타 메뉴 표시 중",
+            "chatroom-is-visible": "채팅방 표시 중"
+        };
 
-            button.addEventListener("click", function () {
-                myCustomFunction("Hello, world!", "Hello from JavaScript!");
+        var currentState = "not-running";
+        var stateDisplay;
+        var messageBox;
+        var messageBtn;
+
+        function applyCurrentState() {
+            const beforeClassNameList = Array.from(stateDisplay.classList.values());
+            for (const className of beforeClassNameList) {
+                if (className !== "ktmac-kakao-state")
+                    stateDisplay.classList.remove(className);
+            }
+            stateDisplay.classList.add(`ktmac-kakao-state-${currentState}`);
+            stateDisplay.innerText = stateMessages[currentState];
+
+            if (currentState === "chatroom-is-visible") {
+                messageBox.disabled = false;
+                messageBtn.disabled = false;
+            } else {
+                messageBox.disabled = true;
+                messageBtn.disabled = true;
+            }
+        }
+
+        window.addEventListener("load", function () {
+            stateDisplay = document.querySelector(".ktmac-kakao-state");
+            messageBox = document.querySelector(".ktmac-message-box");
+            messageBtn = document.querySelector(".ktmac-message-btn");
+            messageBtn.addEventListener("click", function () {
+                if (currentState === "chatroom-is-visible") {
+                    ktmacSendMessage(messageBox.value);
+                }
             });
+            applyCurrentState();
+        });
+
+        window.addEventListener("ktmac-state-changed", function ({ detail }) {
+            currentState = detail;
+            applyCurrentState();
         });
     </script>
-
 </head>
 <body>
-
-    <button id="test-btn">Hello, world!</button>
-
+    <div class="ktmac-kakao-state"></div>
+    <textarea class="ktmac-message-box"></textarea>
+    <button class="ktmac-message-btn">전송</button>
 </body>
 </html>
