@@ -113,6 +113,7 @@
             messageBtn.addEventListener("click", function () {
                 if (currentState === "chatroom-is-visible") {
                     ktmacSendMessage(messageBox.value);
+                    messageBox.value = "";
                 }
             });
             applyCurrentState();
