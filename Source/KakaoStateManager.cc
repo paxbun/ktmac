@@ -344,7 +344,8 @@ void KakaoStateManager::Impl::HandleMessageLoop()
 void KakaoStateManager::Impl::Clean(bool clearHandlerList, bool clearProcessIdList)
 {
     PostThreadMessage(_messageThreadId, WM_QUIT, NULL, NULL);
-    _messageThread.join();
+    if (_messageThread.joinable())
+        _messageThread.join();
 
     if (clearHandlerList)
         _handlerList.clear();
