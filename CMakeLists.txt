@@ -7,6 +7,15 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 set(CMAKE_CONFIGURATION_TYPES Debug Release)
 
+# --------------------------------------- Main executable  --------------------------------------- #
+
+if (KTMAC_BUILD_MAIN)
+    find_package(CEF REQUIRED)
+    add_subdirectory(${CEF_LIBCEF_DLL_WRAPPER_PATH} libcef_dll_wrapper)
+    add_logical_target("libcef_lib" "${CEF_LIB_DEBUG}" "${CEF_LIB_RELEASE}")
+    set_cef_target_out_dir()
+endif()
+
 # ------------------------------------------- Options  ------------------------------------------- #
 
 option(KTMAC_BUILD_MAIN "Specifies whether the main executable is to be built." ON)
@@ -14,11 +23,6 @@ option(KTMAC_SHARED_CORE "Specifies whether the core library is to be built as a
 option(KTMAC_BUILD_TESTS "Specifies whether the test executables are to be built." OFF)
 
 # ----------------------------- Essential libraries and executables  ----------------------------- #
-
-if (KTMAC_BUILD_MAIN)
-    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE})
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE})
-endif()
 
 add_library(ktmac-process-watcher-socket ${PROJECT_SOURCE_DIR}/Source/ProcessWatcherSocket.cc)
 target_link_libraries(ktmac-process-watcher-socket Ws2_32.lib)
@@ -69,11 +73,6 @@ endif()
 # --------------------------------------- Main executable  --------------------------------------- #
 
 if (KTMAC_BUILD_MAIN)
-    find_package(CEF REQUIRED)
-    add_subdirectory(${CEF_LIBCEF_DLL_WRAPPER_PATH} libcef_dll_wrapper)
-    add_logical_target("libcef_lib" "${CEF_LIB_DEBUG}" "${CEF_LIB_RELEASE}")
-    set_cef_target_out_dir()
-
     add_executable(ktmac WIN32
         ${PROJECT_SOURCE_DIR}/Resources/ktmac/gui/Resources.rc
         ${PROJECT_SOURCE_DIR}/Source/gui/App.cc
